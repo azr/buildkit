@@ -46,6 +46,17 @@ type Config struct {
 	// ProvenanceEnvDir is the directory where extra config is loaded
 	// that is added to the provenance of builds. Defaults to /etc/buildkit/provenance.d/ ,
 	ProvenanceEnvDir string `toml:"provenanceEnvDir"`
+
+	// Checksumming configuration
+	Checksumming ChecksummingConfig `toml:"checksumming"`
+}
+
+type ChecksummingConfig struct {
+	// DefaultAlgorithm is the default algorithm used for content checksumming.
+	// Supported values: "sha256", "sha384", "sha512", "blake3"
+	// Default: "sha256"
+	// Can be overridden per-build with --opt checksum-algorithm=<algorithm>
+	DefaultAlgorithm string `toml:"default_algorithm"`
 }
 
 type SystemConfig struct {

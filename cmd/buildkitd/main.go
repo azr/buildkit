@@ -30,6 +30,7 @@ import (
 	s3remotecache "github.com/moby/buildkit/cache/remotecache/s3"
 	"github.com/moby/buildkit/client"
 	"github.com/moby/buildkit/cmd/buildkitd/config"
+	"github.com/moby/buildkit/contenthash"
 	"github.com/moby/buildkit/control"
 	"github.com/moby/buildkit/executor/oci"
 	"github.com/moby/buildkit/frontend"
@@ -275,6 +276,15 @@ func main() {
 			if v := sc.PlatformsCacheMaxAge; v != nil {
 				archutil.CacheMaxAge = v.Duration
 			}
+		}
+
+		// Initialize default checksum algorithm from config
+		checksumAlg := cfg.Checksumming.DefaultAlgorithm
+		if checksumAlg == "" {
+			checksumAlg = "sha256" // default
+		}
+		if err := contenthash.SetAlgorithm(checksumAlg); err != nil {
+			return errors.Wrapf(err, "failed to set default checksum algorithm")
 		}
 
 		if cfg.GRPC.DebugAddress != "" {

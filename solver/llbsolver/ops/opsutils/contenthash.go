@@ -5,7 +5,7 @@ import (
 	"context"
 	"path"
 
-	"github.com/moby/buildkit/cache/contenthash"
+	"github.com/moby/buildkit/contenthash"
 	"github.com/moby/buildkit/session"
 	"github.com/moby/buildkit/solver"
 	"github.com/moby/buildkit/util/cachedigest"

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"cmp"
 	"context"
-	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -20,6 +19,7 @@ import (
 	"time"
 
 	"github.com/moby/buildkit/cache"
+	"github.com/moby/buildkit/contenthash"
 	"github.com/moby/buildkit/session"
 	"github.com/moby/buildkit/session/secrets"
 	"github.com/moby/buildkit/snapshot"
@@ -523,7 +523,17 @@ func (hs *httpSourceHandler) save(ctx context.Context, resp *http.Response, s se
 		}
 	}()
 
-	h := sha256.New()
+	// Determine which algorithm to use for the digest
+	var alg digest.Algorithm
+	if hs.src.Checksum != "" {
+		// Use the algorithm from the user-provided checksum
+		alg = hs.src.Checksum.Algorithm()
+	} else {
+		// Use the configurable algorithm from contenthash
+		alg = contenthash.GetAlgorithmFromContext(ctx)
+	}
+
+	h := alg.Hash()
 
 	if _, err := io.Copy(io.MultiWriter(f, h), resp.Body); err != nil {
 		return nil, "", err
@@ -571,7 +581,7 @@ func (hs *httpSourceHandler) save(ctx context.Context, resp *http.Response, s se
 	newRef = nil
 	md := cacheRefMetadata{ref}
 
-	dgst = digest.NewDigest(digest.SHA256, h)
+	dgst = digest.NewDigest(alg, h)
 
 	if respETag := resp.Header.Get("ETag"); respETag != "" {
 		respETag = etagValue(respETag)

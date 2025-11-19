@@ -900,7 +900,10 @@ func (cc *cacheContext) checksum(ctx context.Context, root *iradix.Node[*CacheRe
 
 	switch cr.Type {
 	case CacheRecordTypeDir:
-		h := cachedigest.NewHash(cachedigest.TypeFileList)
+		h, err := NewHashFromContext(ctx)
+		if err != nil {
+			return nil, false, errors.Wrapf(err, "failed to create hash")
+		}
 		next := append(k, 0)
 		iter := root.Iterator()
 		iter.SeekLowerBound(append(slices.Clone(next), 0))
@@ -943,7 +946,7 @@ func (cc *cacheContext) checksum(ctx context.Context, root *iradix.Node[*CacheRe
 			return nil, false, err
 		}
 
-		dgst, err = prepareDigest(fp, p, fi)
+		dgst, err = prepareDigest(ctx, fp, p, fi)
 		if err != nil {
 			return nil, false, err
 		}
@@ -1221,7 +1224,7 @@ func getFollowLinksCallback(root *iradix.Node[*CacheRecord], k []byte, followTra
 	return convertPathToKey(currentPath), cr, nil
 }
 
-func prepareDigest(fp, p string, fi os.FileInfo) (digest.Digest, error) {
+func prepareDigest(ctx context.Context, fp, p string, fi os.FileInfo) (digest.Digest, error) {
 	h, err := NewFileHash(fp, fi)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to create hash for %s", p)
@@ -1238,7 +1241,7 @@ func prepareDigest(fp, p string, fi os.FileInfo) (digest.Digest, error) {
 			return "", errors.Wrapf(err, "failed to copy file data for %s", p)
 		}
 	}
-	return digest.NewDigest(digest.SHA256, h), nil
+	return NewDigestFromContext(ctx, h)
 }
 
 func addParentToMap(d string, m map[string]struct{}) {

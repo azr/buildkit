@@ -103,7 +103,10 @@ func (s *winDiffer) Compare(ctx context.Context, lower, upper []mount.Mount, opt
 			}
 
 			if isCompressed {
-				dgstr := digest.SHA256.Digester()
+				// Use configurable algorithm for uncompressed digest (diffID)
+				// Get algorithm from context (set by contenthash package) or default to SHA256
+				alg := getAlgorithmFromContext(ctx)
+				dgstr := alg.Digester()
 				compressed, err := compression.CompressStream(cw, compression.Gzip)
 				if err != nil {
 					return errors.Wrap(err, "failed to get compressed stream")
@@ -159,6 +162,21 @@ func (s *winDiffer) Compare(ctx context.Context, lower, upper []mount.Mount, opt
 	}
 
 	return ocidesc, nil
+}
+
+// getAlgorithmFromContext retrieves the checksum algorithm from context.
+// This avoids importing contenthash package to prevent import cycles.
+// Note: This uses a string key to match contenthash's algorithmKey type.
+// Since context keys are compared by type identity, we need to use the same
+// underlying type. We use a string constant that matches contenthash's key.
+const algorithmContextKey = "buildkit.contenthash.algorithm"
+
+func getAlgorithmFromContext(ctx context.Context) digest.Algorithm {
+	if alg, ok := ctx.Value(algorithmContextKey).(digest.Algorithm); ok && alg != "" {
+		return alg
+	}
+	// Default to SHA256 if not set in context (matches contenthash default)
+	return digest.SHA256
 }
 
 func uniqueRef() string {

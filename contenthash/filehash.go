@@ -62,9 +62,9 @@ func NewFromStat(stat *fstypes.Stat) (hash.Hash, error) {
 			hdr.PAXRecords["SCHILY.xattr."+k] = string(v)
 		}
 	}
-	// fmt.Printf("hdr: %#v\n", hdr)
-	h := cachedigest.NewHash(cachedigest.TypeFile)
-	tsh := &tarsumHash{hdr: hdr, Hash: h}
+
+	ch := cachedigest.NewHash(cachedigest.TypeFile)
+	tsh := &tarsumHash{hdr: hdr, Hash: ch}
 	tsh.Reset() // initialize header
 	return tsh, nil
 }

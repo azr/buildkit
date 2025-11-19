@@ -21,6 +21,7 @@ import (
 	"github.com/moby/buildkit/client"
 	"github.com/moby/buildkit/client/llb"
 	"github.com/moby/buildkit/cmd/buildkitd/config"
+	"github.com/moby/buildkit/contenthash"
 	controlgateway "github.com/moby/buildkit/control/gateway"
 	"github.com/moby/buildkit/exporter"
 	"github.com/moby/buildkit/exporter/containerimage/exptypes"
@@ -387,6 +388,15 @@ func (c *Controller) Solve(ctx context.Context, req *controlapi.SolveRequest) (*
 		req.Cache = &controlapi.CacheOptions{} // make sure cache options are initialized
 	}
 	translateLegacySolveRequest(req)
+
+	// Set checksum algorithm from request if provided, otherwise use default
+	if checksumAlg, ok := req.FrontendAttrs["checksum-algorithm"]; ok && checksumAlg != "" {
+		var err error
+		ctx, err = contenthash.WithAlgorithm(ctx, checksumAlg)
+		if err != nil {
+			return nil, errors.Wrapf(err, "invalid checksum algorithm")
+		}
+	}
 
 	defer func() {
 		time.AfterFunc(time.Second, c.throttledGC)

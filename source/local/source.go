@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/moby/buildkit/cache"
-	"github.com/moby/buildkit/cache/contenthash"
 	"github.com/moby/buildkit/client"
+	"github.com/moby/buildkit/contenthash"
 	"github.com/moby/buildkit/session"
 	"github.com/moby/buildkit/session/filesync"
 	"github.com/moby/buildkit/snapshot"
